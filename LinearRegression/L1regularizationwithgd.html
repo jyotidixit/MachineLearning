@@ -1,0 +1,191 @@
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">range</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> <span class="c1"># importing numpy with alias np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span> <span class="c1"># importing matplotlib.pyplot with alias plt</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">No_of_observations</span> <span class="o">=</span> <span class="mi">50</span>  
+<span class="n">No_of_Dimensions</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="n">X_input</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">No_of_observations</span><span class="p">,</span> <span class="n">No_of_Dimensions</span><span class="p">))</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="mi">10</span> <span class="c1">#Generating 50x50 matrix forX with random values centered round 0.5      </span>
+<span class="n">w_dash</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">No_of_Dimensions</span><span class="o">-</span><span class="mi">3</span><span class="p">))</span> <span class="c1"># Making first 3 features significant by setting w for them as non-zero and others zero</span>
+<span class="n">Y_output</span> <span class="o">=</span> <span class="n">X_input</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_dash</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">No_of_observations</span><span class="p">)</span><span class="o">*</span><span class="mf">0.5</span> <span class="c1">#Setting Y = X.w + some random noise</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">costs</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#Setting empty list for costs</span>
+<span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">No_of_Dimensions</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">No_of_Dimensions</span><span class="p">)</span> <span class="c1">#Setting w to random values</span>
+<span class="n">L1_coeff</span> <span class="o">=</span> <span class="mi">5</span>    
+<span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.001</span> <span class="c1">#Setting learning rate to small value so that the gradient descent algo doesn&#39;t skip the minima</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">):</span>
+    <span class="n">Yhat</span> <span class="o">=</span> <span class="n">X_input</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">Yhat</span> <span class="o">-</span> <span class="n">Y_output</span> <span class="c1">#the error between predicted output and actual output</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">-</span> <span class="n">learning_rate</span><span class="o">*</span><span class="p">(</span><span class="n">X_input</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span> <span class="o">+</span> <span class="n">L1_coeff</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">w</span><span class="p">))</span> <span class="c1">#performing gradient descent for w</span>
+    <span class="n">meanSquareError</span> <span class="o">=</span> <span class="n">delta</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span><span class="o">/</span><span class="n">No_of_observations</span> <span class="c1">#Finding mean square error</span>
+    <span class="n">costs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meanSquareError</span><span class="p">)</span> <span class="c1">#Appending mse for each iteration in costs list</span>
+    
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">costs</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Plot of costs of L1 Regularization&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Costs&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+
+
+<div class="output_png output_subarea ">
+<img src="img1.png"
+>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;final w:&quot;</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="c1">#The final w output. As you can see, first 3 w&#39;s are significant , the rest are very small</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>final w: [  9.65816491e-01   4.27099719e-01  -4.39501114e-01   7.26803718e-04
+   1.44676529e-03   4.29653783e-03  -1.88827800e-02   5.01402266e-03
+  -1.45435498e-02   2.98832870e-03  -1.94071569e-03  -1.47917010e-02
+   3.56488642e-02   2.44495593e-02  -3.40885499e-03  -2.23948913e-02
+  -8.56983401e-04   1.00292301e-02   3.33973800e-03   8.51922055e-03
+  -3.72198952e-02   5.31823613e-03  -3.35052948e-02   7.15853488e-03
+  -1.00094617e-02  -1.44190084e-03   2.96771082e-03  -6.51081371e-03
+   3.54465569e-02  -3.30111666e-02   4.42377796e-03  -7.87768360e-03
+   1.26511065e-02  -5.43831611e-04  -4.58914064e-04   5.53972101e-03
+  -8.31677251e-03   8.63159114e-03  -6.17622135e-03  -3.08958154e-03
+   1.39908214e-02   9.34415972e-03  -3.76350383e-03  -2.16322570e-03
+   3.84337810e-03  -6.68382801e-04  -2.84473367e-03   2.48744388e-03
+  -8.91564845e-03   6.97568406e-02]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># plot our w vs true w</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w_dash</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;true w&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;w_map&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+
+
+<div class="output_png output_subarea ">
+<img src="img2.png"
+>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+ 
+
