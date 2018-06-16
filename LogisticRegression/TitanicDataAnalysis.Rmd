@@ -22,11 +22,10 @@ Having seen what the data is all about, let's also understand the problem statem
 Let us first set our working directory and import our dataset. 
 
 ```{r}
-setwd("C:/Users/jyoti/Downloads/LogisticRegression")
-data <- read.csv("titanic.csv")
+data <- read.csv("C:/Users/jyoti/Downloads/LogisticRegression/train.csv")
 ```
 
-Here, data is a dataframe having all the variables and data of those variables. The dataframe has 1257 observations of 9 variables. 
+Here, data is a dataframe having all the variables and data of those variables. The dataframe has 891 observations of 12 variables. 
 The next step is to view the data inside the dataframe.
 ```{r}
 View(data)
@@ -35,13 +34,13 @@ Now starts the first main step, "Data Preparation". To see if there is any missi
 ```{r}
 summary(data)
 ```
-As can be seen, there are 261 missing values in the Age variable. We need to do missing value imputation in this case. But, before doing that, we need to check how the age distribution looks like so that we can know which imputation method to choose and apply. 
+As can be seen, there are 177 missing values in the Age variable. We need to do missing value imputation in this case. But, before doing that, we need to check how the age distribution looks like so that we can know which imputation method to choose and apply. 
 ```{r}
-hist(data$age)
+hist(data$Age)
 ```
 Since the distribution looks somewhat normal, we can use mean value imputation in this case. That is, we can replace the missing values with the mean of the age. This doesn't deviate the mean and the distribution of the age remains the same. 
 ```{r}
-data$age[is.na(data$age)] = 29.07
+data$Age[is.na(data$Age)] = 29.07
 summary(data)
 ```
 As can be seen above, age doesn't have any missing value now.
@@ -52,89 +51,82 @@ head(data)
 Now, let us understand the concept of dummy variables. Suppose a variable "A" has n classes. This variable A can be replaced by n-1 variables. If A has i, j, k, ..., classes, then A_i = 1 in the rows at which i appears in A's column and 0 for the rest of the rows. Same applies for j, k.. etc. The last value gets taken care of by the intercept.
 So, let's introduce dummy variables inside our data for sex and embarked columns since they are holding the categorical data.
 ```{r}
-data$female = ifelse(data$sex=="female", 1, 0)
-data$embarked_c = ifelse(data$embarked=="C", 1, 0)
-data$embarked_s = ifelse(data$embarked=="S", 1, 0)
+data$female = ifelse(data$Sex=="female", 1, 0)
+data$embarked_c = ifelse(data$Embarked=="C", 1, 0)
+data$embarked_s = ifelse(data$Embarked=="S", 1, 0)
 head(data)
 ```
-Now, if you have a look at dataframe, it contains 12 variables and not 9.
-The next step is to remove those variables which we no longer need, name, sex since it is already taken into account by female variable, embarked, i.e. column number 3, 4 and 9.
+Now, if you have a look at dataframe, it contains 15 variables and not 12.
+The next step is to remove those variables which we no longer need in the model making, Name, Sex since it is already taken into account by female variable, Ticket, Cabin, embarked, i.e. column number 4, 5, 9, 11 and 12.
 ```{r}
-data = data[-c(3, 4, 9)]
-head(data)
+PassengerData = data[-c(4, 5, 9, 11, 12)]
+head(PassengerData)
 ```
 Let's do univariate analysis of the numerical variables, age and fare now. 
 ```{r}
-bx = boxplot(data$age)
+bx = boxplot(PassengerData$Age)
 ```
 Thus, there are outliers in the age variable and we need to do outlier handling in this case.
 ```{r}
 bx$stats
-quantile(data$age, seq(0, 1, 0.02))
+quantile(PassengerData$Age, seq(0, 1, 0.02))
 ```
 We can replace the outliers above 96% of the quantile range and below 4% of the quantile range so that more accuracy is obtained and the data loss is also not very significant.
 ```{r}
-data$age = ifelse(data$age>=52, 52, data$age)
-data$age = ifelse(data$age<=4, 4, data$age)
-boxplot(data$age)
+PassengerData$Age = ifelse(PassengerData$Age>=56, 56, PassengerData$Age)
+PassengerData$Age = ifelse(PassengerData$Age<=3, 3, PassengerData$Age)
+boxplot(PassengerData$Age)
 ```
 The boxplot comes out to be neat in this case after outlier handling. Let us now do analysis for fare variable.
 ```{r}
-bx = boxplot(data$fare)
+bx = boxplot(PassengerData$Fare)
 ```
 ```{r}
 bx$stats
 ```
 Thus, there is a very large amount of outlier data on the upper end.
 ```{r}
-quantile(data$fare, seq(0, 1, 0.02))
+quantile(PassengerData$Fare, seq(0, 1, 0.02))
 ```
 As can be seen above, the major difference between the values arises above 96% of the quantile. 
 ```{r}
-data$fare = ifelse(data$fare>=136, 136, data$fare)
-boxplot(data$fare)
+PassengerData$Fare = ifelse(PassengerData$Fare>=133.99, 133.99, PassengerData$Fare)
+boxplot(PassengerData$Fare)
 ```
 Let us now start our bivariate analysis. 
 ```{r}
 library(car)
-scatterplot(data$age, data$survived)
+scatterplot(PassengerData$Age, PassengerData$Survived)
 ```
 It is to be noted that children and old passengers were saved first during the titanic mishap.
 ```{r}
-scatterplot(data$fare, data$survived)
+scatterplot(PassengerData$Fare, PassengerData$Survived)
 ```
-Let's now divide the data into train and test sets.
-```{r}
-set.seed(222)
-t= sample(1:nrow(data), 0.7*nrow(data))
-train = data[t,]
-test = data[-t,]
-```
-Here, we have taken the train to test ratio as 7:3. Let's now make a model and check for multi-collinearity using variance inflation factor technique.
+Let's now make a model and check for multi-collinearity using variance inflation factor technique.
 ```{r}
 library(car)
-model <- lm(survived~., data=train)
+model <- lm(Survived~Pclass+Age+SibSp+Parch+Fare+female+embarked_c+embarked_s, , data=PassengerData)
 t = vif(model)
 sort(t, decreasing=TRUE)
 ```
 As you can see, all the values of VIF for all the variables are less than 5, we need not reject any varible and we can straight away start our analysis.
 ```{r}
-model1<- glm(as.factor(survived)~., family="binomial", data=train)
+model1<- glm(as.factor(Survived)~Pclass+Age+SibSp+Parch+Fare+female+embarked_c+embarked_s, family="binomial", data=PassengerData)
 summary(model1)
 ```
-As you can see, for some variables like parch, embarked_c and embarked_s, the P value is greater than 0.05. Thus, here we cannot reject null hypothesis that there is no relation between survived and them. Thus, we need to accept the null hypothesis and discard these three variables from our analysis.
+As you can see, for some variables like Parch, Fare, embarked_c and embarked_s, the P value is greater than 0.05. Thus, here we cannot reject null hypothesis that there is no relation between survived and them. Thus, we need to accept the null hypothesis and discard these three variables from our analysis.
 Well, step function does it all for us.
 ```{r}
 stepmodel = step(model1, direction="both")
 formula(stepmodel)
 summary(stepmodel)
 ```
-Thus, now the main formula becomes as.factor(survived) ~ pclass + age + sibsp + female + embarked_c.
-Now, we can use stepmodel to predict the score for train dataset.
+Thus, now the main formula becomes as.factor(Survived) ~ Pclass + Age + SibSp + female + embarked_s.
+Now, we can use stepmodel to predict the score for PassengerData dataset.
 ```{r}
-train$score <- predict(stepmodel, newdata = train, type="response")
-head(train$score)
-tail(train$score)
+PassengerData$score <- predict(stepmodel, newdata = PassengerData, type="response")
+head(PassengerData$score)
+tail(PassengerData$score)
 ```
 These are the probabilities values of whether the corresponding passenger survived or not.
 Let's now start the model evaluation.
@@ -143,31 +135,74 @@ library(lattice)
 library(ggplot2)
 library(caret)
 library(e1071)
-train$prediction <- ifelse(train$score>=0.6, 1, 0)
-table(factor(train$prediction), factor(train$survived))
+PassengerData$prediction <- ifelse(PassengerData$score>=0.5, 1, 0)
+table(factor(PassengerData$prediction), factor(PassengerData$Survived))
 ```
-Thus, accuracy = (TP+TN)/(TP+TN+FP+FN)=(508+197)/(508+197+42+132)=705/879=0.802=80.2%. 
+Thus, accuracy = (TP+TN)/(TP+TN+FP+FN)=(472+244)/(472+98+77+244)=716/891=0.8036=80.36%. 
 Now, let's check the ROC and AUC curves of the model.
 ```{r}
 library(InformationValue)
-plotROC(actuals=train$survived, predictedScores=as.numeric(fitted(stepmodel)))
+plotROC(actuals=PassengerData$Survived, predictedScores=as.numeric(fitted(stepmodel)))
 ```
 ```{r}
-ks_plot(actuals=train$survived, predictedScores=as.numeric(fitted(stepmodel)))
+ks_plot(actuals=PassengerData$Survived, predictedScores=as.numeric(fitted(stepmodel)))
 ```
-Thus, the model has AUCRC value equal to 0.8456 which implies that the model quality is very good.
+Thus, the model has AUCRC value equal to 0.8562 which implies that the model quality is very good.
 Now predict the scores on the test data.
 ```{r}
-test$score<-predict(stepmodel, test, type = "response")
-head(test$score)
+test <- read.csv("C:/Users/jyoti/Downloads/LogisticRegression/test.csv")
+summary(test)
 ```
-Let's set the threshold to 0.6.
+Since there are missing values in the test dataset also, we will follow the same series of steps as we had done for train data.
 ```{r}
-test$predicted<-ifelse(test$score>=0.6, 1, 0)
-head(test$predicted)
+hist(test$Age)
 ```
-Let's now have a look at the confusion matrix for test dataset. 
+Let's replace missing values with mean as the distribution is more or less normal in nature.
 ```{r}
-table(factor(test$predicted), factor(test$survived))
+test$Age[is.na(test$Age)]=30.27
+summary(test)
 ```
-Thus, accuracy = 298/378 = 78.83%. Thus the model gives 80.02% accuracy on train dataset and 78.83% accuracy on test dataset.
+There is one missing value in fare too. 
+```{r}
+hist(test$Fare)
+```
+Since the variable is skewed, let's replace the missing value with mean.
+```{r}
+test$Fare[is.na(test$Fare)] = 14.454
+summary(test)
+```
+Let's now do feature engineering.
+```{r}
+test$female = ifelse(test$Sex=="female", 1, 0)
+test$embarked_c = ifelse(test$Embarked=="C", 1, 0)
+test$embarked_s = ifelse(test$Embarked=="S", 1, 0)
+head(test)
+```
+Let's remove name, sex etc variables as we did in training set.
+```{r}
+newtest = data.frame(test)
+newtest = newtest[-c(1, 3, 4, 8, 10, 11)]
+head(newtest)
+```
+Let's now do the predictions. 
+```{r}
+newtest$score<-predict(stepmodel, newtest, type = "response")
+head(newtest$score)
+```
+
+```{r}
+newtest$predicted<-ifelse(newtest$score>=0.5, 1, 0)
+head(newtest$predicted)
+```
+Let's now make the submission dataframe.
+```{r}
+mysubmission<- data.frame(matrix(nrow=nrow(test)))
+mysubmission$PassengerId <- test$PassengerId
+mysubmission$Survived <- newtest$predicted
+mysubmission <- mysubmission[-c(1)]
+```
+Let's now convert the mysubmission dataframe into a .csv file.
+```{r}
+write.csv(mysubmission, 'mysubmission.csv', row.names = FALSE)
+```
+

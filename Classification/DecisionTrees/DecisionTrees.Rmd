@@ -1,0 +1,174 @@
+Hi MLEnthusiasts! Today, we will dive deeper into classification and will learn about Decision trees, how to analyse which variable is important among many given variables and how to make prediction for new data observations based on our analysis and model. 
+Again, we will continue working on the titanic dataset. This will serve our two purposes. One is to learn how to implement classification using decision treess in R and other is by doing this, we will be able to come out with the comparison among the different classification algorithms, which one is better?
+So, like always, the first step is to set our working directory and import the dataset. 
+```{r}
+setwd("C:/Users/jyoti/Desktop/MachineLearning/Classification")
+titanicData <- read.csv("titanic.csv")
+```
+Let's then find out the summary of this data.
+```{r}
+summary(titanicData)
+```
+As you can see, there are 261 missing values in the age column. Let's fix that first. Let's find out the distribution of age variable so that we can understand which value can be used to do missing value imputation.
+```{r}
+hist(titanicData$age)
+```
+The distribution is more or less normal in nature. Let's then go ahead with replacing all the missing values by the mean of the age variable. This can be done by using the following R code.
+```{r}
+titanicData$age[is.na(titanicData$age)] = 29.07
+summary(titanicData)
+```
+Next step is to view how the dataset looks like.
+```{r}
+head(titanicData)
+```
+Let's do some data manipulation to make the dataset useful for model making.
+```{r}
+titanicData$female = ifelse(titanicData$sex=="female", 1, 0)
+titanicData$embarked_c = ifelse(titanicData$embarked=="C", 1, 0)
+titanicData$embarked_s = ifelse(titanicData$embarked=="S", 1, 0)
+titanicData$pclass = as.factor(titanicData$pclass)
+titanicData$survived = as.factor(titanicData$survived)
+head(titanicData)
+```
+Having done that, we also realize that the variables name, sex, embarked are no longer useful to us. So we remove them  from our dataframe.
+```{r}
+titanicData <- titanicData[-c(3, 4, 9)]
+```
+Let's not see if the numerical variables like age and fare have expectile quantiles or that also needs manipulation.
+```{r}
+bx = boxplot(titanicData$age)
+```
+As you can see there are outliers which need to be handled.
+```{r}
+bx$stats
+quantile(titanicData$age, seq(0, 1, 0.02))
+```
+```{r}
+titanicData$age = ifelse(titanicData$age >= 52, 52, titanicData$age)
+titanicData$age = ifelse(titanicData$age <= 4, 4, titanicData$age)
+boxplot(titanicData$age)
+```
+Perfect! Let's do the same for fare variable.
+```{r}
+bx = boxplot(titanicData$fare)
+```
+```{r}
+bx$stats
+quantile(titanicData$fare, seq(0, 1, 0.02))
+```
+To avoid data loss, let's limit the significance level to 96%.
+```{r}
+titanicData$fare = ifelse(titanicData$fare >= 136, 136, titanicData$fare)
+boxplot(titanicData$fare)
+```
+Let's now start the bivariate analysis of our dataset.
+First let's do the boxplot analysis of survived with age and survived with fare.
+```{r}
+boxplot(titanicData$age~titanicData$survived, main="Boxplot for age variable")
+```
+It looks like people who died were mainly of middle age as the whiskers for 0 start at 10 and end at 48 approximately.
+```{r}
+boxplot(titanicData$fare~titanicData$survived, main="Boxplot for fare variable")
+```
+It looks like people who died had also soe relation with fare! Those who died had paid lower(though there are outliers too). Those who survived had paid comparatively higher fare.
+For categorical variables, we will do bivariate analysis using mosaic plot.
+```{r}
+mosaicplot(titanicData$pclass~titanicData$survived, main="Boxplot for pclass variable", color="skyblue")
+```
+This indeed reveals a useful trend.
+1. People of 1st class had a better survival rate among all the classes.
+2. People of 3sr class had the worst survival rate. 
+```{r}
+mosaicplot(titanicData$female~titanicData$survived, main="Boxplot for gender vs survival analysis", color="skyblue")
+```
+Male passengers had worse survival rate than the females. It seems like females were saved first when the mishap happened.
+```{r}
+mosaicplot(titanicData$embarked_c~titanicData$survived, main="Boxplot for embarkment as C variable", color="skyblue")
+```
+It looks like the survival rate for the embarkment other than port "C" is worse than port "C".
+```{r}
+mosaicplot(titanicData$embarked_s~titanicData$survived, main="Boxplot for embarkment as S variable", color="skyblue")
+```
+It looks like the survival rate for port "S" was very very good, far better than the other two ports.
+Let's now do the correlation analysis of the above data. As the cor() function takes only numerical data, let's first convert all the categorical columns into numerical and store it into new dataframe.
+```{r}
+titanicDataNumerical = data.frame(titanicData)
+titanicDataNumerical$pclass = as.numeric(titanicData$pclass)
+titanicDataNumerical$survived = as.numeric(titanicData$survived)
+titanicDataNumerical$sibsp = as.numeric(titanicData$sibsp)
+titanicDataNumerical$parch = as.numeric(titanicData$parch)
+titanicDataNumerical$female = as.numeric(titanicData$female)
+titanicDataNumerical$embarked_c = as.numeric(titanicData$embarked_c)
+titanicDataNumerical$embarked_s = as.numeric(titanicData$embarked_s)
+titanicDataNumerical$age = titanicData$age
+titanicDataNumerical$fare = titanicData$fare
+```
+Now, let's find the correlation among all of them.
+```{r}
+library(corrplot)
+cor(titanicDataNumerical)
+```
+```{r}
+corrplot(cor(titanicDataNumerical), method="circle")
+```
+So, we can say that survival is mainly related to age, pclass, fare, female, embarked_c and embarked_S.
+Let's do the splitting of dataset between training and test sets.
+```{r}
+set.seed(1234)
+split = sample(1:nrow(titanicData), 0.7*nrow(titanicData))
+trainSplit = titanicData[split, ]
+testSplit = titanicData[-split,]
+print(table(trainSplit$survived))
+```
+```{r}
+print(table(testSplit$survived))
+```
+Now let's check for event rate.
+```{r}
+prop.table(table(trainSplit$survived))
+```
+```{r}
+prop.table(table(testSplit$survived))
+```
+So, the probabilities are approx same in both train and test datasets.
+We can now start building our decision tree using rpart algorithm.
+```{r}
+library(rpart)
+library(rpart.plot)
+fit = rpart(survived~., data=trainSplit, method="class", control=rpart.control(minsplit=10, cp=0.008))
+rpart.plot(fit)
+```
+Thus, total 13 nodes get created in this case. Each node shows:
+1. the predicted class(0 for not survived, 1 for survived)
+2. predicted probability of survival
+3. The percentage of observations in each of the node.
+```{r}
+summary(fit)
+```
+CP is the complexity parameter. It prevents overfitting and controls the size of the tree. To get added into a node, a variable has to be having CP less than 0.008 or else tree building will not continue.
+```{r}
+print(fit)
+```
+```{r}
+prp(fit)
+```
+There are 6 leaf nodes representing class 0 and 7 leaf nodes representing class 1. Now, let's plot CP values.
+```{r}
+plotcp(fit)
+```
+```{r}
+printcp(fit)
+```
+Now, let's do the predictions. 
+```{r}
+predictTrain = predict(fit, trainSplit, type="class")
+table(predictTrain, trainSplit$survived)
+```
+Thus, Accuracy for training dataset = 730/879 = 83.05%.
+```{r}
+predictTest = predict(fit, testSplit, type = "class")
+table(predictTest, testSplit$survived)
+```
+Thus, Accuracy for test dataset = 308/378 = 81.48%.
+As compared to the logistic regression, which gives the accuracy of 80% on the training dataset and 78.83% on test dataset, decision tree gives the accuracy of 83.05% on the training dataset and 81.5% on the test dataset.
